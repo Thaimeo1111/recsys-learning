@@ -1,0 +1,43 @@
+Thí nghiệm (làm lần lượt)
+Khoảng cách: so random với popularity. Cái sau hơn bao nhiêu lần?
+Điểm trung bình: xếp theo rating trung bình thay vì số lượt thích. Kết quả ra sao? 
+Thử thêm điều kiện “tối thiểu N lượt đánh giá” với N = 1, 5, 20, 50 và vẽ đường kết quả theo N.
+Không lọc phim đã xem: bỏ điều kiện m not in seen. Điểm tăng hay giảm, và vì sao?
+Độ tập trung: tính xem top 1%, 10% phim chiếm bao nhiêu % tổng lượt thích. Vẽ đồ thị lượt thích theo thứ hạng phim.
+Chia ngẫu nhiên vs theo thời gian: viết lại time_split chia ngẫu nhiên, chạy lại cả hai hệ thống. Điểm thay đổi thế nào?
+Cửa sổ thời gian: chỉ đếm lượt thích trong 6 tháng cuối của train. Có khá hơn không?
+Câu hỏi tự trả lời (viết vào notes.md)
+Q1. Vì sao popularity khó đánh bại? Dùng số ở thí nghiệm 4 để giải thích.
+Q2. Vì sao xếp theo rating trung bình lại tệ khi N nhỏ? Phim nào đứng top ở N=1 và vì sao?
+Q3. Thí nghiệm 3 cho thấy điều gì về việc “đề xuất cái người dùng đã biết”?
+Q4. Chia ngẫu nhiên làm điểm đẹp hơn. Vậy nó “ăn gian” ở đâu? Hệ thống thật sự phải dự đoán gì?
+Q5. Popularity hoàn toàn không cá nhân hóa. Hãy chỉ ra nhóm người dùng nào nó phục vụ kém nhất (gợi ý: tách người dùng theo số phim đã xem hoặc theo thể loại ưa thích, rồi đo riêng từng nhóm).
+Q6 (nối sang bài toán của bạn). Nếu bán hàng, popularity tương ứng với việc gì? Rủi ro nào khi chỉ đề xuất “bán chạy nhất”?
+
+Điều kiện qua cửa: nêu được một con số cho thấy phim phổ biến chiếm phần lớn tương tác, và chỉ ra một nhóm người dùng mà popularity phục vụ kém. Câu Q5 chính là cầu nối sang MVP 1.
+
+Lộ trình các MVP tiếp theo
+MVP	Cột mốc	Bạn sẽ xây	Thí nghiệm làm nút thắt lộ ra
+1	#2, #3: content-based và item-to-item	TF-IDF trên thể loại + tag, rồi item-to-item từ ma trận tương tác	Thử với phim mới chưa ai đánh giá, và so user-user với item-item về thời gian chạy
+2	#4, #5: ma trận phân rã, implicit	ALS bằng implicit, so với dùng rating thô	Đổi factors, bỏ bớt dữ liệu, thêm người dùng mới để thấy cold start
+3	#11, #13, #14: hai tầng	Retrieval bằng FAISS trên embedding, rồi ranking	Đo thời gian chấm điểm toàn bộ mục so với chỉ chấm ứng viên
+4	#6, #15, #20: khám phá, đa mục tiêu	Epsilon-greedy/bandit, re-ranking đa dạng	Đo độ đa dạng của danh sách so với Recall
+
+Mình sẽ chuẩn bị chi tiết từng MVP khi bạn xong MVP trước, vì câu trả lời của bạn sẽ quyết định điểm cần nhấn ở MVP sau.
+
+Điều đáng để bạn suy nghĩ
+Mỗi người có trọng số bằng nhau khi lấy trung bình (macro average), bất kể họ thích 2 hay 200 phim. Người thích 1 phim chỉ có điểm 0 hoặc 1 (rất nhiễu). 
+Câu hỏi: điều này có thiên vị nhóm nào khi so sánh giữa các nhóm người dùng (liên quan Q5)?
+hits chỉ đánh dấu trúng/sai. Phim trúng rating 4 và rating 5 được tính như nhau. Bạn có thể sửa để dùng rating làm độ liên quan (graded relevance) không?
+Phim không có trong relevant bị coi là “sai”, nhưng có thể người dùng sẽ thích mà chưa kịp xem. Đây là giới hạn cố hữu của đánh giá offline và là một lý do các nền tảng tin vào A/B test hơn.
+Bài tập nhỏ: tự tính tay NDCG cho hits = [1, 0, 0, 0, 0] và [0, 0, 0, 0, 1] với relevant có 1 phim. Hai con số chênh nhau bao nhiêu lần, và điều đó nói gì về việc xếp hạng?
+
+Bạn thử chạy với rand và popularity, in thêm hits của vài người để kiểm tra bằng mắt rằng con số khớp với tính tay nhé.
+
+Phim chỉ xuất hiện trong test thì không có trong all_items. Hệ thống không thể đề xuất phim nó chưa từng thấy, dù người dùng có thể thích.
+Đây là cold start phía phim, đường vào của MVP 1. Hãy đếm: bao nhiêu phần trăm phim trong truth không nằm trong all_items?
+Đó là mức điểm tối đa bị mất ngay từ đầu với mọi mô hình dựa trên lịch sử.
+Vì sao rand là “đáy”? Nếu có N phim chưa xem và người dùng thích M phim trong đó, xác suất mỗi phim đề xuất trúng xấp xỉ M/N.
+Bạn thử ước lượng con số này rồi so với Recall thực tế của rand, hai số nên gần nhau.
+random.sample lỗi nếu danh sách còn lại ít hơn k (ValueError: Sample larger than population). Với dataset này hiếm gặp, nhưng hãy nghĩ
+cách xử lý, ví dụ min(k, len(candidates)).
